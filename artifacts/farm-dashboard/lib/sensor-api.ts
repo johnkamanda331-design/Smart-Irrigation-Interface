@@ -1,18 +1,18 @@
-// Temporary sensor data API helpers
-// These will be replaced by generated client when running pnpm generate:api
-
-// Get API base URL from environment or default to localhost
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+// Mock sensor data API helpers
+// Returns mock data for development
 
 export async function getSensorData({ deviceId }: { deviceId: string }) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/sensor-data?deviceId=${encodeURIComponent(deviceId)}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching sensor data:', error);
-    throw error;
-  }
+  return {
+    deviceId,
+    batteryVoltage: 13.2,
+    batteryPercent: 85,
+    solarVoltage: 18.5,
+    flowRate: 2.5,
+    waterLevel: 'OK',
+    pumpStatus: true,
+    gsmSignal: 4,
+    timestamp: new Date().toISOString()
+  };
 }
 
 export async function getSensorDataHistory({ 
@@ -22,16 +22,17 @@ export async function getSensorDataHistory({
   deviceId: string; 
   limit?: number; 
 }) {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/sensor-data/history?deviceId=${encodeURIComponent(deviceId)}&limit=${limit}`
-    );
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching sensor history:', error);
-    throw error;
-  }
+  return Array.from({ length: limit }, (_, i) => ({
+    deviceId,
+    batteryVoltage: 13.2 - Math.random() * 2,
+    batteryPercent: 85 - Math.random() * 10,
+    solarVoltage: 18.5 + Math.random() * 2,
+    flowRate: 2.5 + Math.random() * 1,
+    waterLevel: 'OK' as const,
+    pumpStatus: true,
+    gsmSignal: 4,
+    timestamp: new Date(Date.now() - i * 3600000).toISOString()
+  }));
 }
 
 export async function postSensorData(data: {
@@ -45,15 +46,11 @@ export async function postSensorData(data: {
   gsmSignal: number;
 }) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/sensor-data`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    // Mock: In production, this would POST to the API
+    console.log('Mock sensor data submission:', data);
+    return { success: true, data };
   } catch (error) {
-    console.error('Error posting sensor data:', error);
+    console.error('Error with mock sensor data:', error);
     throw error;
   }
 }
