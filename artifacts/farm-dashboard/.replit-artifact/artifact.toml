@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Smart Farm Dashboard"
+version = "1.0.0"
+id = "artifacts/farm-dashboard"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 24089
+
+[services.development]
+run = "pnpm --filter @workspace/farm-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/farm-dashboard", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/farm-dashboard", "run", "serve" ]
+
+[services.env]
+PORT = "24089"
+BASE_PATH = "/"

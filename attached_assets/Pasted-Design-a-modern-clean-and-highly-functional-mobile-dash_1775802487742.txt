@@ -1,0 +1,129 @@
+Design a modern, clean, and highly functional mobile dashboard UI for a smart irrigation and farm monitoring system.
+
+The system is based on an ESP32 microcontroller with GSM connectivity (SIM800), designed for off-grid solar-powered farming. It includes sensors and controls for:
+
+- Battery voltage monitoring
+- Solar panel voltage monitoring
+- Water flow rate sensing
+- Pump/valve control via MOSFET
+- Water level detection
+- Manual push-button overrides
+- Multiple status LEDs
+
+The UI should be designed for farmers and agritech operators in low-resource environments, so it must be simple, readable, and reliable even with limited connectivity.
+
+### Core Requirements:
+
+Create a mobile app dashboard with the following screens:
+
+---
+
+### 1. HOME DASHBOARD (Main Screen)
+
+Display key system metrics in real time using cards:
+
+- Battery Level (%) + voltage (e.g. 3.7V–4.2V)
+- Solar Panel Voltage
+- Pump Status (ON/OFF)
+- Water Flow Rate (L/min)
+- Water Level (OK / LOW)
+- GSM Signal Strength
+
+Include:
+- Color-coded indicators (Green = OK, Red = Critical)
+- Large readable fonts
+- Minimal text for clarity
+
+---
+
+### 2. CONTROL PANEL
+
+Allow user to:
+
+- Turn Pump ON/OFF (main irrigation / hydroponic circulation)
+- Toggle Auto Mode vs Manual Mode
+
+Use:
+- Toggle switches
+- Safety confirmation for critical actions
+
+---
+
+### 3. SENSOR DETAILS SCREEN
+
+Display detailed graphs:
+
+- Battery voltage over time
+- Solar voltage trends
+- Water flow history
+
+Use:
+- Line charts
+- Time filters (1h, 24h, 7 days)
+
+---
+
+### 4. ALERTS & NOTIFICATIONS
+
+Show warnings such as:
+
+- Low battery
+- No water flow detected
+- Tank empty
+
+Include:
+- Timestamped alerts
+- Priority levels
+
+---
+
+### 5. SYSTEM STATUS
+
+Display:
+
+- Device online/offline
+- Last communication time (GSM-based)
+- Signal strength indicator
+- Firmware version (optional)
+
+---
+
+### 6. SETTINGS
+
+Allow user to configure:
+
+- Pump schedules (timed irrigation cycles)
+- Thresholds:
+  - Minimum water level
+  - Battery cutoff voltage
+  - Flow detection limits
+- Alert preferences
+
+---
+
+### UI STYLE GUIDELINES:
+
+- Clean, modern design
+- Use soft greens and blues (agriculture + water theme)
+- High contrast for outdoor visibility
+- Rounded cards and simple icons
+- Minimal clutter
+
+---
+
+### TECHNICAL CONTEXT:
+
+The system communicates via GSM (SIM800), so the UI should assume:
+- Intermittent connectivity
+- Data sync instead of constant streaming
+
+---
+
+### OUTPUT:
+
+Generate:
+- Full mobile app UI (multiple screens)
+- Interactive layout with buttons, cards, and charts
+- Realistic sample data values
+
+The design should feel like a real, deployable agritech product, not a concept.
