@@ -9,16 +9,16 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
     "sourceMap": true,
     "noEmit": true,
     "moduleResolution": "nodenext",
-    "baseUrl": ".",
+    "baseUrl": "../",
     "paths": {
-      "@workspace/*": ["../lib/*/src/index.ts"],
-      "@workspace/db": ["../lib/db/src/index.ts"],
-      "@workspace/api-zod": ["../lib/api-zod/src/index.ts"]
+      "@workspace/db": ["lib/db/src/index.ts"],
+      "@workspace/db/*": ["lib/db/src/*"],
+      "@workspace/api-zod": ["lib/api-zod/src/index.ts"],
+      "@workspace/api-zod/*": ["lib/api-zod/src/*"]
     }
   },
   "include": ["**/*.ts"],
