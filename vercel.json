@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "pnpm install",
-  "buildCommand": "cd artifacts/farm-dashboard && pnpm run build:web",
+  "buildCommand": "pnpm --dir artifacts/farm-dashboard run build:web",
   "outputDirectory": "artifacts/farm-dashboard/web-build",
   "functions": {
     "api/**/*.js": {
