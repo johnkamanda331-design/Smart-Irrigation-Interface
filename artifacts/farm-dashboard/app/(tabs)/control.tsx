@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ function PumpButton() {
     transform: [{ scale: scale.value }],
   }));
 
-  function handlePress() {
+  async function handlePress() {
     const action = sensorData.pumpStatus ? 'turn OFF' : 'turn ON';
     Alert.alert(
       'Confirm Action',
@@ -41,12 +42,16 @@ function PumpButton() {
         {
           text: sensorData.pumpStatus ? 'Turn Off' : 'Turn On',
           style: sensorData.pumpStatus ? 'destructive' : 'default',
-          onPress: () => {
+          onPress: async () => {
             scale.value = withSpring(0.94, {}, () => {
               scale.value = withSpring(1);
             });
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            togglePump();
+            try {
+              await togglePump();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to control pump. Please try again.');
+            }
           },
         },
       ]
@@ -135,9 +140,10 @@ function ToggleRow({
 export default function ControlScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { sensorData, settings, toggleAutoMode, updateSettings } = useFarm();
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = Platform.OS === 'web' ? 24 : insets.top;
 
   return (
     <ScrollView
@@ -146,11 +152,12 @@ export default function ControlScreen() {
         styles.content,
         {
           paddingTop: topPad + 16,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16,
+          paddingBottom: Platform.OS === 'web' ? 76 : insets.bottom + 16,
         },
       ]}
     >
-      <Text style={[styles.screenTitle, { color: colors.foreground }]}>Control Panel</Text>
+      <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
+        <Text style={[styles.screenTitle, { color: colors.foreground }]}>Control Panel</Text>
       <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
         Manage pump and system modes
       </Text>
@@ -209,6 +216,7 @@ export default function ControlScreen() {
           Manual pump control is disabled while Auto Mode is active. Disable Auto Mode to control the pump manually.
         </Text>
       </View>
+      </View>
     </ScrollView>
   );
 }
@@ -216,6 +224,14 @@ export default function ControlScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 16 },
+  pageInner: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  pageInnerWide: {
+    paddingHorizontal: 16,
+  },
   screenTitle: {
     fontSize: 24,
     fontFamily: 'Inter_700Bold',

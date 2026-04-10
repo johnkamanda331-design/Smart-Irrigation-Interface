@@ -8,3 +8,13 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface PumpControlRequest {
+  deviceId: string;
+  command: "ON" | "OFF";
+}
+
+export interface PumpControlResponse {
+  message: string;
+  commandId: number;
+}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSensorData, getSensorDataHistory, setBaseUrl } from '@workspace/api-client-react';
+import { getSensorData, getSensorDataHistory, controlPump, setBaseUrl } from '@workspace/api-client-react';
 
 const apiBaseUrl = typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_API_BASE_URL ?? null : null;
 if (apiBaseUrl) {
@@ -61,7 +61,7 @@ interface FarmContextType {
   settings: Settings;
   history: HistoricalPoint[];
   unreadAlerts: number;
-  togglePump: () => void;
+  togglePump: () => Promise<void>;
   toggleAutoMode: () => void;
   markAlertRead: (id: string) => void;
   clearAllAlerts: () => void;
@@ -264,13 +264,27 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     };
   }, [deviceId, fetchSensorData, fetchHistory]);
 
-  const togglePump = useCallback(() => {
-    setSensorData(prev => ({
-      ...prev,
-      pumpStatus: !prev.pumpStatus,
-      flowRate: !prev.pumpStatus ? 3.2 : 0,
-    }));
-  }, []);
+  const togglePump = useCallback(async () => {
+    if (!deviceId) return;
+
+    try {
+      const command = sensorData.pumpStatus ? 'OFF' : 'ON';
+      await controlPump({
+        deviceId,
+        command,
+      });
+
+      // Update local state optimistically
+      setSensorData(prev => ({
+        ...prev,
+        pumpStatus: !prev.pumpStatus,
+        flowRate: !prev.pumpStatus ? 3.2 : 0,
+      }));
+    } catch (error) {
+      console.error('Failed to toggle pump:', error);
+      // Could show an error alert here
+    }
+  }, [deviceId, sensorData.pumpStatus]);
 
   const toggleAutoMode = useCallback(() => {
     setSettings(prev => ({ ...prev, autoMode: !prev.autoMode }));

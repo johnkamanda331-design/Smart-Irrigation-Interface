@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -28,8 +29,11 @@ function formatRelativeTime(date: Date): string {
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { sensorData, history, refreshData, unreadAlerts } = useFarm();
   const [refreshing, setRefreshing] = useState(false);
+
+  const topPad = Platform.OS === 'web' ? 24 : insets.top;
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -43,8 +47,6 @@ export default function HomeScreen() {
   const solarHistory = recentHistory.map(h => h.solar);
   const flowHistory = recentHistory.map(h => h.flow);
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-
   return (
     <ScrollView
       style={[styles.scroll, { backgroundColor: colors.background }]}
@@ -52,14 +54,14 @@ export default function HomeScreen() {
         styles.content,
         {
           paddingTop: topPad + 16,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16,
+          paddingBottom: Platform.OS === 'web' ? 76 : insets.bottom + 16,
         },
       ]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
     >
-      <View style={styles.header}>
+      <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
         <View>
           <Text style={[styles.greeting, { color: colors.mutedForeground }]}>Smart Irrigation</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>Farm Dashboard</Text>
@@ -181,6 +183,7 @@ export default function HomeScreen() {
           height={48}
         />
       </View>
+      </View>
     </ScrollView>
   );
 }
@@ -188,6 +191,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 14 },
+  pageInner: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  pageInnerWide: {
+    paddingHorizontal: 16,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

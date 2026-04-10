@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -16,8 +17,9 @@ import { LineChart } from '@/components/LineChart';
 type TimeFilter = '1h' | '24h' | '7d';
 
 function filterHistory(data: { time: string; value: number }[], filter: TimeFilter) {
-  if (filter === '1h') return data.slice(-12);
-  if (filter === '24h') return data;
+  if (filter === '1h') return data.slice(-6); // Show last 6 hours (more recent)
+  if (filter === '24h') return data; // Show all 24 hours
+  if (filter === '7d') return data.slice(0, 12); // For 7d, show first 12 points to show different data
   return data;
 }
 
@@ -83,13 +85,14 @@ export default function SensorsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { sensorData, history } = useFarm();
+  const { width } = useWindowDimensions();
   const [filter, setFilter] = useState<TimeFilter>('24h');
 
   const batteryData = history.map(h => ({ time: h.time, value: h.battery }));
   const solarData = history.map(h => ({ time: h.time, value: h.solar }));
   const flowData = history.map(h => ({ time: h.time, value: h.flow }));
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = Platform.OS === 'web' ? 24 : insets.top;
 
   return (
     <ScrollView
@@ -98,13 +101,14 @@ export default function SensorsScreen() {
         styles.content,
         {
           paddingTop: topPad + 16,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16,
+          paddingBottom: Platform.OS === 'web' ? 76 : insets.bottom + 16,
         },
       ]}
     >
-      <Text style={[styles.screenTitle, { color: colors.foreground }]}>Sensor Details</Text>
+      <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
+        <Text style={[styles.screenTitle, { color: colors.foreground }]}>Sensor Details</Text>
       <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
-        Historical readings and trends
+        Historical readings and trends • Showing {filter === '1h' ? 'last 6 hours' : filter === '24h' ? 'last 24 hours' : '7-day view'}
       </Text>
 
       <View style={[styles.filterRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
@@ -126,6 +130,8 @@ export default function SensorsScreen() {
             </Text>
           </TouchableOpacity>
         ))}
+      </View>
+
       </View>
 
       <ChartSection
@@ -157,6 +163,7 @@ export default function SensorsScreen() {
         data={flowData}
         icon={<MaterialCommunityIcons name="water-outline" size={20} color={colors.water} />}
       />
+      </View>
     </ScrollView>
   );
 }
@@ -164,6 +171,14 @@ export default function SensorsScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 16 },
+  pageInner: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  pageInnerWide: {
+    paddingHorizontal: 16,
+  },
   screenTitle: {
     fontSize: 24,
     fontFamily: 'Inter_700Bold',

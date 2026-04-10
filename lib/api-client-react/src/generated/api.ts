@@ -5,15 +5,18 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import type {
   QueryFunction,
   QueryKey,
   UseQueryOptions,
   UseQueryResult,
+  MutationFunction,
+  UseMutationOptions,
+  UseMutationResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type { HealthStatus, PumpControlRequest, PumpControlResponse } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
 import type { ErrorType } from "../custom-fetch";
@@ -98,4 +101,79 @@ export function useHealthCheck<
   };
 
   return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Send pump control command to ESP32 device
+ * @summary Control pump
+ */
+export const getControlPumpUrl = () => {
+  return `/api/pump-control`;
+};
+
+export const controlPump = async (
+  pumpControlRequest: PumpControlRequest,
+  options?: RequestInit,
+): Promise<PumpControlResponse> => {
+  return customFetch<PumpControlResponse>(getControlPumpUrl(), {
+    ...options,
+    method: "POST",
+    body: JSON.stringify(pumpControlRequest),
+  });
+};
+
+export const getControlPumpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof controlPump>>,
+    TError,
+    { data: PumpControlRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof controlPump>>,
+    { data: PumpControlRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return controlPump(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ControlPumpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof controlPump>>
+>;
+export type ControlPumpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Control pump
+ */
+export function useControlPump<
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof controlPump>>,
+    TError,
+    { data: PumpControlRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof controlPump>>,
+  TError,
+  { data: PumpControlRequest },
+  TContext
+> {
+  const mutationOptions = getControlPumpMutationOptions(options);
+
+  return useMutation(mutationOptions);
 }

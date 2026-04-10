@@ -24,5 +24,16 @@ export const insertSensorDataSchema = createInsertSchema(sensorDataTable)
     flowRate: z.string().or(z.number()),
   });
 
-export type InsertSensorData = z.infer<typeof insertSensorDataSchema>;
-export type SensorData = typeof sensorDataTable.$inferSelect;
+export const pumpControlTable = pgTable("pump_control", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  deviceId: text("device_id").notNull(),
+  command: text("command", { enum: ["ON", "OFF"] }).notNull(),
+  executed: boolean("executed").notNull().default(false),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertPumpControlSchema = createInsertSchema(pumpControlTable)
+  .omit({ id: true, timestamp: true, executed: true });
+
+export type InsertPumpControl = z.infer<typeof insertPumpControlSchema>;
+export type PumpControl = typeof pumpControlTable.$inferSelect;

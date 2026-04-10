@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -52,8 +53,9 @@ function formatLastComm(date: Date): string {
 export default function StatusScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { sensorData } = useFarm();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = Platform.OS === 'web' ? 24 : insets.top;
 
   const gsmStrength = ['None', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][sensorData.gsmSignal] || 'Unknown';
 
@@ -64,11 +66,12 @@ export default function StatusScreen() {
         styles.content,
         {
           paddingTop: topPad + 16,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16,
+          paddingBottom: Platform.OS === 'web' ? 76 : insets.bottom + 16,
         },
       ]}
     >
-      <Text style={[styles.screenTitle, { color: colors.foreground }]}>System Status</Text>
+      <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
+        <Text style={[styles.screenTitle, { color: colors.foreground }]}>System Status</Text>
       <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
         Device health and connectivity
       </Text>
@@ -199,6 +202,7 @@ export default function StatusScreen() {
           </React.Fragment>
         ))}
       </View>
+      </View>
     </ScrollView>
   );
 }
@@ -206,6 +210,14 @@ export default function StatusScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 16 },
+  pageInner: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  pageInnerWide: {
+    paddingHorizontal: 16,
+  },
   screenTitle: {
     fontSize: 24,
     fontFamily: 'Inter_700Bold',

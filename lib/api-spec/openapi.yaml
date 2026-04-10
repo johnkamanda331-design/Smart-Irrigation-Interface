@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: sensor
     description: Sensor data operations
+  - name: pump
+    description: Pump control operations
 paths:
   /healthz:
     get:
@@ -47,6 +49,28 @@ paths:
                 $ref: "#/components/schemas/PostSensorDataResponse"
         "400":
           description: Invalid sensor data
+          content:
+  /pump-control:
+    post:
+      operationId: controlPump
+      tags: [pump]
+      summary: Control pump
+      description: Send pump control command to ESP32 device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PumpControlRequest"
+      responses:
+        "201":
+          description: Pump control command queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PumpControlResponse"
+        "400":
+          description: Invalid pump control request
           content:
             application/json:
               schema:
@@ -136,6 +160,29 @@ components:
           type: string
       required:
         - status
+    PumpControlRequest:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          description: Unique device identifier
+        command:
+          type: string
+          enum: [ON, OFF]
+          description: Pump control command
+      required:
+        - deviceId
+        - command
+    PumpControlResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        commandId:
+          type: integer
+      required:
+        - message
+        - commandId
     PostSensorDataRequest:
       type: object
       properties:

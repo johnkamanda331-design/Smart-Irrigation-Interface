@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -130,8 +131,9 @@ export default function SettingsScreen() {
   const [changePinNew, setChangePinNew] = useState('');
   const [changePinError, setChangePinError] = useState(false);
   const [changePinAttempts, setChangePinAttempts] = useState(0);
+  const { width } = useWindowDimensions();
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = Platform.OS === 'web' ? 24 : insets.top;
 
   function handleAddSchedule() {
     if (!newName.trim()) return;
@@ -156,11 +158,12 @@ export default function SettingsScreen() {
         styles.content,
         {
           paddingTop: topPad + 16,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16,
+          paddingBottom: Platform.OS === 'web' ? 76 : insets.bottom + 16,
         },
       ]}
     >
-      <Text style={[styles.screenTitle, { color: colors.foreground }]}>Settings</Text>
+      <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
+        <Text style={[styles.screenTitle, { color: colors.foreground }]}>Settings</Text>
       <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
         Schedules and system thresholds
       </Text>
@@ -460,6 +463,7 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+      </View>
     </ScrollView>
   );
 }
@@ -467,6 +471,14 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 16 },
+  pageInner: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  pageInnerWide: {
+    paddingHorizontal: 16,
+  },
   screenTitle: {
     fontSize: 24,
     fontFamily: 'Inter_700Bold',

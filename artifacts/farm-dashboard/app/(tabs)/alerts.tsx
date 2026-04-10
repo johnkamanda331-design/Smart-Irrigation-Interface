@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -89,9 +90,10 @@ function AlertCard({ alert, onRead }: { alert: Alert; onRead: () => void }) {
 export default function AlertsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { alerts, markAlertRead, clearAllAlerts, unreadAlerts } = useFarm();
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = Platform.OS === 'web' ? 24 : insets.top;
 
   return (
     <ScrollView
@@ -100,11 +102,12 @@ export default function AlertsScreen() {
         styles.content,
         {
           paddingTop: topPad + 16,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16,
+          paddingBottom: Platform.OS === 'web' ? 76 : insets.bottom + 16,
         },
       ]}
     >
-      <View style={styles.header}>
+      <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
+        <View style={styles.header}>
         <View>
           <Text style={[styles.screenTitle, { color: colors.foreground }]}>Alerts</Text>
           <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
@@ -140,6 +143,7 @@ export default function AlertsScreen() {
           ))}
         </View>
       )}
+      </View>
     </ScrollView>
   );
 }
@@ -147,6 +151,14 @@ export default function AlertsScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 16 },
+  pageInner: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  pageInnerWide: {
+    paddingHorizontal: 16,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
