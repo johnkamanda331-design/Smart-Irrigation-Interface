@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSensorData, getSensorDataHistory } from '../lib/sensor-api';
+import { getSensorData, getSensorDataHistory, setBaseUrl } from '@workspace/api-client-react';
+
+const apiBaseUrl = typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_API_BASE_URL ?? null : null;
+if (apiBaseUrl) {
+  setBaseUrl(apiBaseUrl);
+}
 
 export interface SensorData {
   batteryVoltage: number;
@@ -164,7 +169,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<HistoricalPoint[]>(generateHistory());
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch device ID from storage
   useEffect(() => {
@@ -219,7 +224,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await getSensorDataHistory({ deviceId, limit: 24 });
       if (data?.data && Array.isArray(data.data)) {
-        const points: HistoricalPoint[] = data.data.map((record: any) => ({
+        const points: HistoricalPoint[] = data.data.map(record => ({
           time: new Date(record.timestamp).toLocaleTimeString([], { 
             hour: '2-digit', 
             minute: '2-digit' 

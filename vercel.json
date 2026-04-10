@@ -3,13 +3,10 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "echo 'Build ready'",
   "outputDirectory": ".",
-  "env": {
-    "NODE_ENV": "production"
-  },
   "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 30,
-      "includeFiles": "lib/**/*"
+    "api/**/*.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
     }
   }
 }

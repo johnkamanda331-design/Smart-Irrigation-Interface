@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asset Manager Dashboard</title>
+  <link rel="icon" type="image/png" href="/icon.png" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #f6f8fb 0%, #eef2f7 100%);
+      color: #111827;
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .container {
+      width: min(980px, 100%);
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 20px 70px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo img {
+      width: 48px;
+      height: 48px;
+    }
+
+    .header-text h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .header-text p {
+      margin: 0.25rem 0 0;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+
+    .content {
+      padding: 2rem;
+    }
+
+    p {
+      margin: 0 0 1.5rem;
+      line-height: 1.6;
+      color: #4b5563;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      background: #2563eb;
+      color: white;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .results {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .result-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 1.25rem;
+      background: #f9fafb;
+      transition: all 0.3s;
+    }
+
+    .result-item:hover {
+      border-color: #d1d5db;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .result-item strong {
+      display: block;
+      margin-bottom: 0.75rem;
+      color: #1f2937;
+      font-size: 0.95rem;
+    }
+
+    pre {
+      margin: 0;
+      padding: 0.75rem;
+      border-radius: 8px;
+      background: #f3f4f6;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+
+    .status.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .footer {
+      padding: 1.5rem 2rem;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      color: #6b7280;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <img src="/icon.png" alt="Asset Manager" />
+      </div>
+      <div class="header-text">
+        <h1>Asset Manager API</h1>
+        <p>Real-time irrigation system monitoring & control</p>
+      </div>
+    </div>
+
+    <div class="content">
+      <p>This dashboard tests the API endpoints. The Expo mobile app connects to the same endpoints with:</p>
+      <div class="button-group">
+        <button id="refreshButton">🔄 Refresh Data</button>
+        <button id="clearButton">🗑️ Clear Results</button>
+      </div>
+
+      <div class="results">
+        <div class="result-item">
+          <strong>
+            Health Check
+            <span class="status loading" id="healthStatus">loading…</span>
+          </strong>
+          <pre id="healthResult">Fetching…</pre>
+        </div>
+        <div class="result-item">
+          <strong>
+            Latest Sensor Data
+            <span class="status loading" id="sensorStatus">loading…</span>
+          </strong>
+          <pre id="sensorResult">Fetching…</pre>
+        </div>
+        <div class="result-item">
+          <strong>
+            Sensor History
+            <span class="status loading" id="historyStatus">loading…</span>
+          </strong>
+          <pre id="historyResult">Fetching…</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>For Expo/Mobile App:</strong><br />
+      Set environment variable: <code>EXPO_PUBLIC_API_BASE_URL=https://&lt;your-domain&gt;</code><br />
+      The mobile app will automatically use this base URL to reach the API endpoints.
+    </div>
+  </div>
+
+  <script>
+    const deviceId = 'demo-device';
+
+    function updateStatus(statusId, state) {
+      const el = document.getElementById(statusId);
+      el.className = 'status ' + state;
+      el.textContent = state === 'loading' ? 'loading…' : state === 'success' ? '✓ ok' : '✗ error';
+    }
+
+    async function fetchJson(path) {
+      try {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const body = await response.json();
+        return { success: true, data: JSON.stringify(body, null, 2) };
+      } catch (error) {
+        return { success: false, data: String(error) };
+      }
+    }
+
+    async function refresh() {
+      updateStatus('healthStatus', 'loading');
+      updateStatus('sensorStatus', 'loading');
+      updateStatus('historyStatus', 'loading');
+
+      document.getElementById('healthResult').textContent = 'Fetching…';
+      document.getElementById('sensorResult').textContent = 'Fetching…';
+      document.getElementById('historyResult').textContent = 'Fetching…';
+
+      const [health, sensor, history] = await Promise.all([
+        fetchJson('/api/healthz'),
+        fetchJson(`/api/sensor-data?deviceId=${deviceId}`),
+        fetchJson(`/api/sensor-data/history?deviceId=${deviceId}&limit=5`),
+      ]);
+
+      document.getElementById('healthResult').textContent = health.data;
+      updateStatus('healthStatus', health.success ? 'success' : 'error');
+
+      document.getElementById('sensorResult').textContent = sensor.data;
+      updateStatus('sensorStatus', sensor.success ? 'success' : 'error');
+
+      document.getElementById('historyResult').textContent = history.data;
+      updateStatus('historyStatus', history.success ? 'success' : 'error');
+    }
+
+    document.getElementById('refreshButton').addEventListener('click', refresh);
+    document.getElementById('clearButton').addEventListener('click', () => {
+      document.getElementById('healthResult').textContent = 'Cleared';
+      document.getElementById('sensorResult').textContent = 'Cleared';
+      document.getElementById('historyResult').textContent = 'Cleared';
+      document.getElementById('healthStatus').className = 'status';
+      document.getElementById('sensorStatus').className = 'status';
+      document.getElementById('historyStatus').className = 'status';
+    });
+
+    refresh();
+  </script>
+</body>
+</html>
