@@ -8,6 +8,5 @@ build
 *.log
 
 # Exclude mobile app specific (only API server deploys)
-artifacts/farm-dashboard
 artifacts/mockup-sandbox
 scripts
