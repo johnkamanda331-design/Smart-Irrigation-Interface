@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install && pnpm run typecheck",
   "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run typecheck",
+  "outputDirectory": ".",
   "env": {
     "NODE_ENV": "production"
   },
@@ -11,21 +12,15 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:match*",
-      "destination": "/api/:match*"
-    }
-  ],
-  "headers": [
+      "src": "/api/(.*)",
+      "dest": "/api/$1",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    },
     {
-      "source": "/api/:match*",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
-        }
-      ]
+      "src": "/(.*)",
+      "status": 404
     }
   ]
 }
