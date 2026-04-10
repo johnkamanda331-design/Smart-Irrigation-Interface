@@ -183,7 +183,6 @@ export default function HomeScreen() {
           height={48}
         />
       </View>
-      </View>
     </ScrollView>
   );
 }
