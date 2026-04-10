@@ -9,9 +9,10 @@ interface LineChartProps {
   unit: string;
   width?: number;
   height?: number;
+  xLabelInterval?: number;
 }
 
-export function LineChart({ data, color, unit, width, height = 120 }: LineChartProps) {
+export function LineChart({ data, color, unit, width, height = 120, xLabelInterval }: LineChartProps) {
   const colors = useColors();
   const chartWidth = width || Dimensions.get('window').width - 64;
   const padLeft = 36;
@@ -41,7 +42,7 @@ export function LineChart({ data, color, unit, width, height = 120 }: LineChartP
   ];
 
   const yTicks = 3;
-  const xLabelInterval = Math.max(1, Math.floor(data.length / 5));
+  const effectiveXLabelInterval = xLabelInterval ?? Math.max(1, Math.floor(data.length / 5));
 
   return (
     <Svg width={chartWidth} height={height}>
@@ -73,7 +74,7 @@ export function LineChart({ data, color, unit, width, height = 120 }: LineChartP
       })}
 
       {data.map((d, i) => {
-        if (i % xLabelInterval !== 0) return null;
+        if (i % effectiveXLabelInterval !== 0) return null;
         const x = padLeft + (i / (data.length - 1)) * plotW;
         return (
           <SvgText

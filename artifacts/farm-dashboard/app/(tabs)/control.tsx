@@ -25,14 +25,22 @@ import Animated, {
 
 function PumpButton() {
   const colors = useColors();
-  const { sensorData, togglePump } = useFarm();
+  const { sensorData, settings, togglePump } = useFarm();
+  const [isToggling, setIsToggling] = useState(false);
   const scale = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  const isDisabled = settings.autoMode || isToggling;
+
   async function handlePress() {
+    if (settings.autoMode) {
+      Alert.alert('Auto Mode Active', 'Disable Auto Mode to control the pump manually.');
+      return;
+    }
+
     const action = sensorData.pumpStatus ? 'turn OFF' : 'turn ON';
     Alert.alert(
       'Confirm Action',
@@ -43,6 +51,7 @@ function PumpButton() {
           text: sensorData.pumpStatus ? 'Turn Off' : 'Turn On',
           style: sensorData.pumpStatus ? 'destructive' : 'default',
           onPress: async () => {
+            setIsToggling(true);
             scale.value = withSpring(0.94, {}, () => {
               scale.value = withSpring(1);
             });
@@ -51,6 +60,8 @@ function PumpButton() {
               await togglePump();
             } catch (error) {
               Alert.alert('Error', 'Failed to control pump. Please try again.');
+            } finally {
+              setIsToggling(false);
             }
           },
         },
@@ -64,17 +75,23 @@ function PumpButton() {
     <View style={[styles.pumpCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Text style={[styles.pumpLabel, { color: colors.mutedForeground }]}>MAIN PUMP</Text>
 
+      {settings.demoMode && (
+        <View style={[styles.demoBadge, { backgroundColor: colors.secondary + '20', borderColor: colors.secondary }]}>
+          <MaterialCommunityIcons name="test-tube" size={14} color={colors.secondary} />
+          <Text style={[styles.demoBadgeText, { color: colors.secondary }]}>Demo Mode</Text>
+        </View>
+      )}
+
       <Animated.View style={[styles.pumpCircleWrap, animStyle]}>
         <TouchableOpacity
           onPress={handlePress}
+          disabled={isDisabled}
           style={[
             styles.pumpCircle,
             {
               backgroundColor: sensorData.pumpStatus ? colors.pump + '18' : colors.muted,
               borderColor: pumpColor,
-            },
-          ]}
-          activeOpacity={0.85}
+              opacity: isDisabled ? 0.6 : 1,
         >
           <MaterialCommunityIcons name="water-pump" size={48} color={pumpColor} />
           <Text style={[styles.pumpStateText, { color: pumpColor }]}>
@@ -297,6 +314,21 @@ const styles = StyleSheet.create({
   },
   pumpStatusText: {
     fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+  },
+  demoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  demoBadgeText: {
+    fontSize: 12,
     fontFamily: 'Inter_500Medium',
   },
   section: {

@@ -16,10 +16,26 @@ import { LineChart } from '@/components/LineChart';
 
 type TimeFilter = '1h' | '24h' | '7d';
 
+function formatHistoryLabel(time: string, filter: TimeFilter) {
+  const date = new Date(time);
+
+  if (filter === '7d') {
+    return date.toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function filterHistory(data: { time: string; value: number }[], filter: TimeFilter) {
-  if (filter === '1h') return data.slice(-6); // Show last 6 hours
-  if (filter === '24h') return data.slice(-24); // Show last 24 hours
-  if (filter === '7d') return data.slice(-168); // Show last 7 days of hourly data
+  if (filter === '1h') return data.slice(-6);
+  if (filter === '24h') return data.slice(-24);
+  if (filter === '7d') return data.slice(-168);
   return data;
 }
 
@@ -31,6 +47,7 @@ function ChartSection({
   data,
   current,
   filter,
+  xLabelInterval,
 }: {
   title: string;
   unit: string;
@@ -39,6 +56,7 @@ function ChartSection({
   data: { time: string; value: number }[];
   current: string;
   filter: TimeFilter;
+  xLabelInterval?: number;
 }) {
   const colors = useColors();
   const filtered = filterHistory(data, filter);
@@ -76,6 +94,7 @@ function ChartSection({
         color={color}
         unit={unit}
         height={110}
+        xLabelInterval={xLabelInterval}
       />
     </View>
   );
@@ -88,9 +107,9 @@ export default function SensorsScreen() {
   const { width } = useWindowDimensions();
   const [filter, setFilter] = useState<TimeFilter>('24h');
 
-  const batteryData = history.map(h => ({ time: h.time, value: h.battery }));
-  const solarData = history.map(h => ({ time: h.time, value: h.solar }));
-  const flowData = history.map(h => ({ time: h.time, value: h.flow }));
+  const batteryData = history.map(h => ({ time: formatHistoryLabel(h.time, filter), value: h.battery }));
+  const solarData = history.map(h => ({ time: formatHistoryLabel(h.time, filter), value: h.solar }));
+  const flowData = history.map(h => ({ time: formatHistoryLabel(h.time, filter), value: h.flow }));
 
   const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
@@ -141,6 +160,7 @@ export default function SensorsScreen() {
         filter={filter}
         current={sensorData.batteryVoltage.toFixed(2)}
         data={batteryData}
+        xLabelInterval={filter === '7d' ? Math.max(1, Math.floor(batteryData.length / 7)) : undefined}
         icon={<MaterialCommunityIcons name="battery-charging" size={20} color={colors.battery} />}
       />
 
@@ -151,6 +171,7 @@ export default function SensorsScreen() {
         filter={filter}
         current={sensorData.solarVoltage.toFixed(1)}
         data={solarData}
+        xLabelInterval={filter === '7d' ? Math.max(1, Math.floor(solarData.length / 7)) : undefined}
         icon={<MaterialCommunityIcons name="solar-panel" size={20} color={colors.solar} />}
       />
 
@@ -161,6 +182,7 @@ export default function SensorsScreen() {
         filter={filter}
         current={sensorData.flowRate.toFixed(1)}
         data={flowData}
+        xLabelInterval={filter === '7d' ? Math.max(1, Math.floor(flowData.length / 7)) : undefined}
         icon={<MaterialCommunityIcons name="water-outline" size={20} color={colors.water} />}
       />
     </ScrollView>

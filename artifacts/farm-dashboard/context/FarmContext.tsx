@@ -58,7 +58,7 @@ export interface Settings {
 }
 
 export interface HistoricalPoint {
-  time: string;
+  time: string; // ISO timestamp string
   battery: number;
   solar: number;
   flow: number;
@@ -138,9 +138,7 @@ function generateHistory(hours = 24): HistoricalPoint[] {
       ? Math.max(0, 12 * Math.sin(((hour - 6) / 12) * Math.PI))
       : 0;
     points.push({
-      time: hours > 48
-        ? t.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit' })
-        : t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: t.toISOString(),
       battery: parseFloat((3.7 + Math.random() * 0.4 + (solarBase > 5 ? 0.05 : -0.02)).toFixed(2)),
       solar: parseFloat((solarBase + (Math.random() - 0.5)).toFixed(2)),
       flow: parseFloat((Math.random() > 0.3 ? 2.5 + Math.random() * 1.5 : 0).toFixed(2)),
@@ -250,7 +248,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch sensor data from API
   const fetchSensorData = useCallback(async () => {
-    if (!deviceId) return;
+    if (!deviceId && !settings.demoMode) return;
     try {
       setIsLoading(true);
 
@@ -260,9 +258,11 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
           ...prev,
           lastSyncTime: new Date(),
         }));
+        setIsLoading(false);
         return;
       }
 
+      if (!deviceId) return;
       const data = await getSensorData({ deviceId });
       const record = data?.data;
       if (record) {
@@ -288,7 +288,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch historical data from API
   const fetchHistory = useCallback(async () => {
-    if (!deviceId) return;
+    if (!deviceId && !settings.demoMode) return;
     try {
       // In demo mode, use generated mock data
       if (settings.demoMode) {
@@ -296,14 +296,11 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (!deviceId) return;
       const data = await getSensorDataHistory({ deviceId, limit: 168 });
       if (data?.data && Array.isArray(data.data)) {
         const points: HistoricalPoint[] = data.data.map((record: SensorDataRecord) => ({
-          time: new Date(record.timestamp).toLocaleString([], {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-          }),
+          time: record.timestamp,
           battery: parseFloat(String(record.batteryVoltage)),
           solar: parseFloat(String(record.solarVoltage)),
           flow: parseFloat(String(record.flowRate)),
@@ -317,7 +314,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
 
   // Set up polling interval
   useEffect(() => {
-    if (!deviceId) return;
+    if (!deviceId && !settings.demoMode) return;
 
     // Fetch immediately
     fetchSensorData();
@@ -337,16 +334,16 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       clearInterval(historyInterval);
     };
-  }, [deviceId, fetchSensorData, fetchHistory]);
+  }, [deviceId, settings.demoMode, fetchSensorData, fetchHistory]);
 
   const togglePump = useCallback(async () => {
-    if (!deviceId) return;
+    if (!deviceId && !settings.demoMode) return;
 
     try {
       const command = sensorData.pumpStatus ? 'OFF' : 'ON';
 
       // In demo mode, skip API call but still update local state
-      if (!settings.demoMode) {
+      if (!settings.demoMode && deviceId) {
         await controlPump({
           deviceId,
           command,
