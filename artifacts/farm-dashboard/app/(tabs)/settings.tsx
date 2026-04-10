@@ -15,6 +15,9 @@ import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useFarm, Schedule } from '@/context/FarmContext';
+import { useAuth } from '@/context/AuthContext';
+import { PinSetupFlow } from '@/components/PinSetupFlow';
+import { PinScreen } from '@/components/PinScreen';
 
 function SliderInput({
   label,
@@ -110,14 +113,23 @@ function ScheduleCard({
   );
 }
 
+type SecurityModal = 'setup' | 'change' | 'remove' | null;
+
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { settings, schedules, updateSettings, updateSchedule, deleteSchedule, addSchedule } = useFarm();
+  const { hasPin, lock, removePin, changePin, checkPin, failedAttempts, remainingLockout } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [newTime, setNewTime] = useState('06:00');
   const [newDuration, setNewDuration] = useState('30');
+  const [securityModal, setSecurityModal] = useState<SecurityModal>(null);
+  const [changePinStep, setChangePinStep] = useState<'old' | 'new' | 'confirm'>('old');
+  const [changePinOld, setChangePinOld] = useState('');
+  const [changePinNew, setChangePinNew] = useState('');
+  const [changePinError, setChangePinError] = useState(false);
+  const [changePinAttempts, setChangePinAttempts] = useState(0);
 
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
 
@@ -228,6 +240,174 @@ export default function SettingsScreen() {
           Changes are applied immediately. The device will receive updated thresholds on the next GSM sync.
         </Text>
       </View>
+
+      <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.sectionHeaderRow}>
+          <View style={styles.sectionTitleRow}>
+            <MaterialCommunityIcons name="shield-lock-outline" size={18} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Security</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.secRow}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (hasPin) {
+              setChangePinStep('old');
+              setChangePinOld('');
+              setChangePinNew('');
+              setChangePinError(false);
+              setChangePinAttempts(0);
+              setSecurityModal('change');
+            } else {
+              setSecurityModal('setup');
+            }
+          }}
+          activeOpacity={0.75}
+        >
+          <View style={[styles.secIcon, { backgroundColor: colors.primary + '15' }]}>
+            <MaterialCommunityIcons name={hasPin ? 'lock-outline' : 'lock-open-outline'} size={18} color={colors.primary} />
+          </View>
+          <View style={styles.secBody}>
+            <Text style={[styles.secTitle, { color: colors.foreground }]}>
+              {hasPin ? 'Change PIN' : 'Enable PIN Lock'}
+            </Text>
+            <Text style={[styles.secSub, { color: colors.mutedForeground }]}>
+              {hasPin ? '4-digit PIN is active' : 'Add a PIN to protect the dashboard'}
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
+        {hasPin && (
+          <>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <TouchableOpacity
+              style={styles.secRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                lock();
+              }}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.secIcon, { backgroundColor: colors.accent + '15' }]}>
+                <MaterialCommunityIcons name="lock-clock" size={18} color={colors.accent} />
+              </View>
+              <View style={styles.secBody}>
+                <Text style={[styles.secTitle, { color: colors.foreground }]}>Lock Now</Text>
+                <Text style={[styles.secSub, { color: colors.mutedForeground }]}>
+                  Require PIN to access the dashboard
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <TouchableOpacity
+              style={styles.secRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setChangePinAttempts(0);
+                setSecurityModal('remove');
+              }}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.secIcon, { backgroundColor: colors.destructive + '15' }]}>
+                <MaterialCommunityIcons name="lock-remove-outline" size={18} color={colors.destructive} />
+              </View>
+              <View style={styles.secBody}>
+                <Text style={[styles.secTitle, { color: colors.destructive }]}>Remove PIN</Text>
+                <Text style={[styles.secSub, { color: colors.mutedForeground }]}>
+                  Disable PIN lock for this device
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+
+      <Modal visible={securityModal === 'setup'} animationType="slide">
+        <PinSetupFlow
+          onDone={() => setSecurityModal(null)}
+          onCancel={() => setSecurityModal(null)}
+        />
+      </Modal>
+
+      <Modal visible={securityModal === 'remove'} animationType="slide">
+        <PinScreen
+          mode="unlock"
+          title="Confirm removal"
+          subtitle="Enter your current PIN to disable the lock"
+          failedAttempts={changePinAttempts}
+          onSubmit={async (pin) => {
+            const ok = await removePin(pin);
+            if (ok) {
+              setSecurityModal(null);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+              setChangePinAttempts(p => p + 1);
+            }
+          }}
+          onCancel={() => setSecurityModal(null)}
+        />
+      </Modal>
+
+      <Modal visible={securityModal === 'change'} animationType="slide">
+        {changePinStep === 'old' && (
+          <PinScreen
+            mode="change-old"
+            title="Enter current PIN"
+            subtitle="Verify your identity before changing"
+            failedAttempts={changePinAttempts}
+            onSubmit={async (pin) => {
+              const ok = await checkPin(pin);
+              if (ok) {
+                setChangePinOld(pin);
+                setChangePinStep('new');
+                setChangePinError(false);
+              } else {
+                setChangePinAttempts(p => p + 1);
+              }
+            }}
+            onCancel={() => setSecurityModal(null)}
+          />
+        )}
+        {changePinStep === 'new' && (
+          <PinScreen
+            mode="change-new"
+            title="Enter new PIN"
+            subtitle="Choose a new 4-digit PIN"
+            failedAttempts={0}
+            onSubmit={(pin) => {
+              setChangePinNew(pin);
+              setChangePinStep('confirm');
+            }}
+            onCancel={() => setChangePinStep('old')}
+          />
+        )}
+        {changePinStep === 'confirm' && (
+          <PinScreen
+            mode="change-confirm"
+            title="Confirm new PIN"
+            subtitle="Re-enter your new PIN"
+            failedAttempts={changePinError ? 1 : 0}
+            onSubmit={async (pin) => {
+              if (pin !== changePinNew) {
+                setChangePinError(true);
+                setChangePinStep('new');
+                setChangePinNew('');
+                return;
+              }
+              await changePin(changePinOld, pin);
+              setSecurityModal(null);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }}
+            onCancel={() => setChangePinStep('new')}
+          />
+        )}
+      </Modal>
 
       <Modal visible={showAddModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -465,5 +645,35 @@ const styles = StyleSheet.create({
   modalBtnText: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  secRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 12,
+  },
+  secIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secBody: {
+    flex: 1,
+    gap: 2,
+  },
+  secTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  secSub: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
   },
 });

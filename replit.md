@@ -1,3 +1,28 @@
+# Smart Farm Dashboard
+
+## Overview
+
+Mobile dashboard app for a smart irrigation and farm monitoring system (ESP32 + SIM800 GSM). Built with Expo (React Native).
+
+## Features
+
+- **Home Dashboard** — real-time battery, solar, pump, flow rate, water level, GSM metrics
+- **Control Panel** — pump ON/OFF with safety confirmation, Auto/Manual mode toggle
+- **Sensor Details** — line charts for battery, solar, flow with 1h/24h/7d filters
+- **Alerts** — priority-based (critical/warning/info) timestamped notifications
+- **System Status** — device/GSM/firmware info, per-component health
+- **Settings** — irrigation schedules, threshold controls, **PIN security lock**
+
+## Security
+
+- 4-digit PIN lock screen with dot-masked entry
+- Failed attempts counter (max 5) with 30-second lockout
+- Shake animation + haptic feedback on wrong PIN
+- PIN stored locally as salted hash
+- Enable/Disable/Change PIN from Settings
+
+---
+
 # Workspace
 
 ## Overview
