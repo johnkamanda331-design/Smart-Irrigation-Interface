@@ -92,6 +92,9 @@ function PumpButton() {
               backgroundColor: sensorData.pumpStatus ? colors.pump + '18' : colors.muted,
               borderColor: pumpColor,
               opacity: isDisabled ? 0.6 : 1,
+            },
+          ]}
+          activeOpacity={0.85}
         >
           <MaterialCommunityIcons name="water-pump" size={48} color={pumpColor} />
           <Text style={[styles.pumpStateText, { color: pumpColor }]}>
