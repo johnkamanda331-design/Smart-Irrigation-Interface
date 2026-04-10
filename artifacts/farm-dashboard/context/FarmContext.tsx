@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getSensorData, getSensorDataHistory } from '../lib/sensor-api';
 
 export interface SensorData {
   batteryVoltage: number;
@@ -160,21 +161,103 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   const [alerts, setAlerts] = useState<Alert[]>(INITIAL_ALERTS);
   const [schedules, setSchedules] = useState<Schedule[]>(INITIAL_SCHEDULES);
   const [settings, setSettings] = useState<Settings>(INITIAL_SETTINGS);
-  const [history] = useState<HistoricalPoint[]>(generateHistory());
+  const [history, setHistory] = useState<HistoricalPoint[]>(generateHistory());
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Fetch device ID from storage
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSensorData(prev => ({
-        ...prev,
-        batteryVoltage: parseFloat((prev.batteryVoltage + (Math.random() - 0.5) * 0.02).toFixed(2)),
-        batteryPercent: Math.min(100, Math.max(0, prev.batteryPercent + (Math.random() - 0.45))),
-        solarVoltage: parseFloat((prev.solarVoltage + (Math.random() - 0.5) * 0.3).toFixed(1)),
-        flowRate: prev.pumpStatus ? parseFloat((2.5 + Math.random() * 2).toFixed(1)) : 0,
-        lastSyncTime: new Date(),
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
+    const loadDeviceId = async () => {
+      try {
+        const id = await AsyncStorage.getItem('deviceId');
+        if (id) {
+          setDeviceId(id);
+        } else {
+          // Generate a new device ID if not exists
+          const newId = `device_${Date.now()}`;
+          await AsyncStorage.setItem('deviceId', newId);
+          setDeviceId(newId);
+        }
+      } catch (error) {
+        console.error('Failed to load device ID:', error);
+      }
+    };
+    loadDeviceId();
   }, []);
+
+  // Fetch sensor data from API
+  const fetchSensorData = useCallback(async () => {
+    if (!deviceId) return;
+    try {
+      setIsLoading(true);
+      const data = await getSensorData({ deviceId });
+      if (data?.data) {
+        setSensorData(prev => ({
+          ...prev,
+          batteryVoltage: parseFloat(String(data.data.batteryVoltage || prev.batteryVoltage)),
+          batteryPercent: data.data.batteryPercent || prev.batteryPercent,
+          solarVoltage: parseFloat(String(data.data.solarVoltage || prev.solarVoltage)),
+          flowRate: parseFloat(String(data.data.flowRate || prev.flowRate)),
+          waterLevel: data.data.waterLevel || prev.waterLevel,
+          pumpStatus: data.data.pumpStatus ?? prev.pumpStatus,
+          gsmSignal: data.data.gsmSignal || prev.gsmSignal,
+          deviceOnline: data.data.deviceOnline ?? prev.deviceOnline,
+          lastSyncTime: new Date(),
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch sensor data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [deviceId]);
+
+  // Fetch historical data from API
+  const fetchHistory = useCallback(async () => {
+    if (!deviceId) return;
+    try {
+      const data = await getSensorDataHistory({ deviceId, limit: 24 });
+      if (data?.data && Array.isArray(data.data)) {
+        const points: HistoricalPoint[] = data.data.map((record: any) => ({
+          time: new Date(record.timestamp).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          battery: parseFloat(String(record.batteryVoltage)),
+          solar: parseFloat(String(record.solarVoltage)),
+          flow: parseFloat(String(record.flowRate)),
+        }));
+        setHistory(points);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sensor history:', error);
+    }
+  }, [deviceId]);
+
+  // Set up polling interval
+  useEffect(() => {
+    if (!deviceId) return;
+
+    // Fetch immediately
+    fetchSensorData();
+    fetchHistory();
+
+    // Set up polling every 30 seconds
+    pollIntervalRef.current = setInterval(() => {
+      fetchSensorData();
+    }, 30000);
+
+    // Fetch history every 5 minutes
+    const historyInterval = setInterval(() => {
+      fetchHistory();
+    }, 300000);
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      clearInterval(historyInterval);
+    };
+  }, [deviceId, fetchSensorData, fetchHistory]);
 
   const togglePump = useCallback(() => {
     setSensorData(prev => ({
@@ -214,12 +297,9 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshData = useCallback(() => {
-    setSensorData(prev => ({
-      ...prev,
-      lastSyncTime: new Date(),
-      gsmSignal: Math.floor(Math.random() * 5) + 1,
-    }));
-  }, []);
+    fetchSensorData();
+    fetchHistory();
+  }, [fetchSensorData, fetchHistory]);
 
   const unreadAlerts = alerts.filter(a => !a.read).length;
 

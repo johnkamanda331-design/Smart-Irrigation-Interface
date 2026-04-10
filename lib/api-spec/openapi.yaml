@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: sensor
+    description: Sensor data operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,107 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /sensor-data:
+    post:
+      operationId: postSensorData
+      tags: [sensor]
+      summary: Submit sensor data
+      description: ESP32 device submits sensor data via GSM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostSensorDataRequest"
+      responses:
+        "201":
+          description: Sensor data received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostSensorDataResponse"
+        "400":
+          description: Invalid sensor data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: getSensorData
+      tags: [sensor]
+      summary: Get latest sensor data
+      description: Retrieve latest sensor data for a device
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Device ID
+      responses:
+        "200":
+          description: Latest sensor data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetSensorDataResponse"
+        "400":
+          description: Missing deviceId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sensor-data/history:
+    get:
+      operationId: getSensorDataHistory
+      tags: [sensor]
+      summary: Get historical sensor data
+      description: Retrieve historical sensor data for a device
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Device ID
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 24
+          description: Number of records to retrieve (default 24)
+      responses:
+        "200":
+          description: Historical sensor data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetSensorDataHistoryResponse"
+        "400":
+          description: Missing deviceId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +136,102 @@ components:
           type: string
       required:
         - status
+    PostSensorDataRequest:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          description: Unique device identifier
+        batteryVoltage:
+          type: number
+          description: Battery voltage in volts
+        batteryPercent:
+          type: integer
+          description: Battery percentage (0-100)
+        solarVoltage:
+          type: number
+          description: Solar panel voltage in volts
+        flowRate:
+          type: number
+          description: Water flow rate in L/min
+        waterLevel:
+          type: string
+          enum: [OK, LOW, EMPTY]
+          description: Water tank level status
+        pumpStatus:
+          type: boolean
+          description: Pump on/off status
+        gsmSignal:
+          type: integer
+          description: GSM signal strength (0-31)
+      required:
+        - deviceId
+        - batteryVoltage
+        - batteryPercent
+        - solarVoltage
+        - flowRate
+        - waterLevel
+        - pumpStatus
+        - gsmSignal
+    PostSensorDataResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PostSensorDataRequest"
+    SensorDataRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        deviceId:
+          type: string
+        batteryVoltage:
+          type: number
+        batteryPercent:
+          type: integer
+        solarVoltage:
+          type: number
+        flowRate:
+          type: number
+        waterLevel:
+          type: string
+          enum: [OK, LOW, EMPTY]
+        pumpStatus:
+          type: boolean
+        gsmSignal:
+          type: integer
+        deviceOnline:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+    GetSensorDataResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/SensorDataRecord"
+        timestamp:
+          type: string
+          format: date-time
+    GetSensorDataHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SensorDataRecord"
+        timestamp:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+      required:
+        - error
 

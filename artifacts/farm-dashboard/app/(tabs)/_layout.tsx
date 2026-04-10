@@ -21,7 +21,7 @@ function NativeTabLayout() {
         <Label>Control</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="sensors">
-        <Icon sf={{ default: "chart.line.uptrend.xyaxis", selected: "chart.line.uptrend.xyaxis.fill" }} />
+        <Icon sf={{ default: "gauge", selected: "gauge" }} />
         <Label>Sensors</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="alerts">
