@@ -17,9 +17,9 @@ import { LineChart } from '@/components/LineChart';
 type TimeFilter = '1h' | '24h' | '7d';
 
 function filterHistory(data: { time: string; value: number }[], filter: TimeFilter) {
-  if (filter === '1h') return data.slice(-6); // Show last 6 hours (more recent)
-  if (filter === '24h') return data; // Show all 24 hours
-  if (filter === '7d') return data.slice(0, 12); // For 7d, show first 12 points to show different data
+  if (filter === '1h') return data.slice(-6); // Show last 6 hours
+  if (filter === '24h') return data.slice(-24); // Show last 24 hours
+  if (filter === '7d') return data.slice(-168); // Show last 7 days of hourly data
   return data;
 }
 
@@ -107,11 +107,11 @@ export default function SensorsScreen() {
     >
       <View style={[styles.pageInner, width >= 960 && styles.pageInnerWide]}>
         <Text style={[styles.screenTitle, { color: colors.foreground }]}>Sensor Details</Text>
-      <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
-        Historical readings and trends • Showing {filter === '1h' ? 'last 6 hours' : filter === '24h' ? 'last 24 hours' : '7-day view'}
-      </Text>
+        <Text style={[styles.screenSub, { color: colors.mutedForeground }]}>
+        Historical readings and trends • Showing {filter === '1h' ? 'last 6 hours' : filter === '24h' ? 'last 24 hours' : 'last 7 days'}
+        </Text>
 
-      <View style={[styles.filterRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+        <View style={[styles.filterRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
         {(['1h', '24h', '7d'] as TimeFilter[]).map(f => (
           <TouchableOpacity
             key={f}

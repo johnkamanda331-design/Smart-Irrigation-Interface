@@ -1,10 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSensorData, getSensorDataHistory, controlPump, setBaseUrl } from '@workspace/api-client-react';
+import { controlPump, setBaseUrl } from '@workspace/api-client-react';
 
 const apiBaseUrl = typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_API_BASE_URL ?? null : null;
 if (apiBaseUrl) {
   setBaseUrl(apiBaseUrl);
+}
+
+function buildApiUrl(path: string, params: Record<string, string | number> = {}) {
+  const query = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)])),
+  ).toString();
+
+  const base = apiBaseUrl ? apiBaseUrl.replace(/\/+$|\/$/, '') : '';
+  return `${base}${path}${query ? `?${query}` : ''}`;
 }
 
 export interface SensorData {
@@ -54,6 +63,49 @@ export interface HistoricalPoint {
   flow: number;
 }
 
+interface SensorDataRecord {
+  batteryVoltage: number;
+  batteryPercent: number;
+  solarVoltage: number;
+  flowRate: number;
+  waterLevel: 'OK' | 'LOW' | 'EMPTY';
+  pumpStatus: boolean;
+  gsmSignal: number;
+  deviceOnline: boolean;
+  timestamp: string;
+}
+
+async function getSensorData(params: { deviceId: string }) {
+  const url = buildApiUrl('/api/sensor-data', { deviceId: params.deviceId });
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sensor data (${response.status})`);
+  }
+
+  return response.json() as Promise<{ data: SensorDataRecord | null }>;
+}
+
+async function getSensorDataHistory(params: { deviceId: string; limit?: number }) {
+  const url = buildApiUrl('/api/sensor-data/history', {
+    deviceId: params.deviceId,
+    limit: params.limit ?? 24,
+  });
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sensor history (${response.status})`);
+  }
+
+  return response.json() as Promise<{ data: SensorDataRecord[] }>;
+}
+
 interface FarmContextType {
   sensorData: SensorData;
   alerts: Alert[];
@@ -74,17 +126,19 @@ interface FarmContextType {
 
 const FarmContext = createContext<FarmContextType | undefined>(undefined);
 
-function generateHistory(): HistoricalPoint[] {
+function generateHistory(hours = 24): HistoricalPoint[] {
   const points: HistoricalPoint[] = [];
   const now = new Date();
-  for (let i = 23; i >= 0; i--) {
+  for (let i = hours - 1; i >= 0; i--) {
     const t = new Date(now.getTime() - i * 3600000);
     const hour = t.getHours();
     const solarBase = hour >= 6 && hour <= 18
       ? Math.max(0, 12 * Math.sin(((hour - 6) / 12) * Math.PI))
       : 0;
     points.push({
-      time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: hours > 48
+        ? t.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit' })
+        : t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       battery: parseFloat((3.7 + Math.random() * 0.4 + (solarBase > 5 ? 0.05 : -0.02)).toFixed(2)),
       solar: parseFloat((solarBase + (Math.random() - 0.5)).toFixed(2)),
       flow: parseFloat((Math.random() > 0.3 ? 2.5 + Math.random() * 1.5 : 0).toFixed(2)),
@@ -166,10 +220,10 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   const [alerts, setAlerts] = useState<Alert[]>(INITIAL_ALERTS);
   const [schedules, setSchedules] = useState<Schedule[]>(INITIAL_SCHEDULES);
   const [settings, setSettings] = useState<Settings>(INITIAL_SETTINGS);
-  const [history, setHistory] = useState<HistoricalPoint[]>(generateHistory());
+  const [history, setHistory] = useState<HistoricalPoint[]>(generateHistory(168));
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fetch device ID from storage
   useEffect(() => {
@@ -197,17 +251,18 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const data = await getSensorData({ deviceId });
-      if (data?.data) {
+      const record = data?.data;
+      if (record) {
         setSensorData(prev => ({
           ...prev,
-          batteryVoltage: parseFloat(String(data.data.batteryVoltage || prev.batteryVoltage)),
-          batteryPercent: data.data.batteryPercent || prev.batteryPercent,
-          solarVoltage: parseFloat(String(data.data.solarVoltage || prev.solarVoltage)),
-          flowRate: parseFloat(String(data.data.flowRate || prev.flowRate)),
-          waterLevel: data.data.waterLevel || prev.waterLevel,
-          pumpStatus: data.data.pumpStatus ?? prev.pumpStatus,
-          gsmSignal: data.data.gsmSignal || prev.gsmSignal,
-          deviceOnline: data.data.deviceOnline ?? prev.deviceOnline,
+          batteryVoltage: parseFloat(String(record.batteryVoltage ?? prev.batteryVoltage)),
+          batteryPercent: record.batteryPercent ?? prev.batteryPercent,
+          solarVoltage: parseFloat(String(record.solarVoltage ?? prev.solarVoltage)),
+          flowRate: parseFloat(String(record.flowRate ?? prev.flowRate)),
+          waterLevel: record.waterLevel ?? prev.waterLevel,
+          pumpStatus: record.pumpStatus ?? prev.pumpStatus,
+          gsmSignal: record.gsmSignal ?? prev.gsmSignal,
+          deviceOnline: record.deviceOnline ?? prev.deviceOnline,
           lastSyncTime: new Date(),
         }));
       }
@@ -222,12 +277,13 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   const fetchHistory = useCallback(async () => {
     if (!deviceId) return;
     try {
-      const data = await getSensorDataHistory({ deviceId, limit: 24 });
+      const data = await getSensorDataHistory({ deviceId, limit: 168 });
       if (data?.data && Array.isArray(data.data)) {
-        const points: HistoricalPoint[] = data.data.map(record => ({
-          time: new Date(record.timestamp).toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        const points: HistoricalPoint[] = data.data.map((record: SensorDataRecord) => ({
+          time: new Date(record.timestamp).toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
           }),
           battery: parseFloat(String(record.batteryVoltage)),
           solar: parseFloat(String(record.solarVoltage)),
