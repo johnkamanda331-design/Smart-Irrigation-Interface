@@ -1,6 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { insertSensorDataSchema, sensorDataTable } from '@workspace/db';
-import { db } from '../lib/db';
+import { insertSensorDataSchema, sensorDataTable, db } from '@workspace/db';
 import { desc, eq } from 'drizzle-orm';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

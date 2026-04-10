@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm run typecheck",
+  "buildCommand": "tsc -p tsconfig.vercel.json --noEmit",
   "outputDirectory": ".",
   "env": {
     "NODE_ENV": "production"
