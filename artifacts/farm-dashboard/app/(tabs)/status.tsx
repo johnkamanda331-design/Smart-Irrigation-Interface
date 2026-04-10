@@ -55,7 +55,7 @@ export default function StatusScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { sensorData } = useFarm();
-  const topPad = Platform.OS === 'web' ? 24 : insets.top;
+  const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
   const gsmStrength = ['None', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][sensorData.gsmSignal] || 'Unknown';
 

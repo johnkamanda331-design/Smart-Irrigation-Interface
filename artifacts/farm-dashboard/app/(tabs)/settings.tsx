@@ -133,7 +133,7 @@ export default function SettingsScreen() {
   const [changePinAttempts, setChangePinAttempts] = useState(0);
   const { width } = useWindowDimensions();
 
-  const topPad = Platform.OS === 'web' ? 24 : insets.top;
+  const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
   function handleAddSchedule() {
     if (!newName.trim()) return;

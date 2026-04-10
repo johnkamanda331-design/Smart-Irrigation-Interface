@@ -93,7 +93,7 @@ export default function AlertsScreen() {
   const { width } = useWindowDimensions();
   const { alerts, markAlertRead, clearAllAlerts, unreadAlerts } = useFarm();
 
-  const topPad = Platform.OS === 'web' ? 24 : insets.top;
+  const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
   return (
     <ScrollView

@@ -141,9 +141,9 @@ export default function ControlScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { sensorData, settings, toggleAutoMode, updateSettings } = useFarm();
+  const { sensorData, settings, toggleAutoMode, toggleDemoMode, updateSettings } = useFarm();
 
-  const topPad = Platform.OS === 'web' ? 24 : insets.top;
+  const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
   return (
     <ScrollView
@@ -166,6 +166,17 @@ export default function ControlScreen() {
 
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Operation Mode</Text>
+
+        <ToggleRow
+          title="Demo Mode"
+          subtitle="Use mock data without connecting to hardware"
+          value={settings.demoMode}
+          onChange={() => toggleDemoMode()}
+          iconColor={colors.secondary}
+          icon={<MaterialCommunityIcons name="test-tube" size={20} color={colors.secondary} />}
+        />
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <ToggleRow
           title="Auto Mode"

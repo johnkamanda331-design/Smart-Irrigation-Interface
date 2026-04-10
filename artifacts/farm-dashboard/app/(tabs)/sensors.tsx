@@ -92,7 +92,7 @@ export default function SensorsScreen() {
   const solarData = history.map(h => ({ time: h.time, value: h.solar }));
   const flowData = history.map(h => ({ time: h.time, value: h.flow }));
 
-  const topPad = Platform.OS === 'web' ? 24 : insets.top;
+  const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
   return (
     <ScrollView

@@ -54,6 +54,7 @@ export interface Settings {
   alertFlow: boolean;
   alertWater: boolean;
   autoMode: boolean;
+  demoMode: boolean;
 }
 
 export interface HistoricalPoint {
@@ -115,6 +116,7 @@ interface FarmContextType {
   unreadAlerts: number;
   togglePump: () => Promise<void>;
   toggleAutoMode: () => void;
+  toggleDemoMode: () => void;
   markAlertRead: (id: string) => void;
   clearAllAlerts: () => void;
   addSchedule: (schedule: Omit<Schedule, 'id'>) => void;
@@ -213,6 +215,7 @@ const INITIAL_SETTINGS: Settings = {
   alertFlow: true,
   alertWater: true,
   autoMode: false,
+  demoMode: true, // Start in demo mode by default
 };
 
 export function FarmProvider({ children }: { children: React.ReactNode }) {
@@ -250,6 +253,16 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     if (!deviceId) return;
     try {
       setIsLoading(true);
+
+      // In demo mode, just update the sync time without making API calls
+      if (settings.demoMode) {
+        setSensorData(prev => ({
+          ...prev,
+          lastSyncTime: new Date(),
+        }));
+        return;
+      }
+
       const data = await getSensorData({ deviceId });
       const record = data?.data;
       if (record) {
@@ -271,12 +284,18 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [deviceId]);
+  }, [deviceId, settings.demoMode]);
 
   // Fetch historical data from API
   const fetchHistory = useCallback(async () => {
     if (!deviceId) return;
     try {
+      // In demo mode, use generated mock data
+      if (settings.demoMode) {
+        setHistory(generateHistory(168));
+        return;
+      }
+
       const data = await getSensorDataHistory({ deviceId, limit: 168 });
       if (data?.data && Array.isArray(data.data)) {
         const points: HistoricalPoint[] = data.data.map((record: SensorDataRecord) => ({
@@ -294,7 +313,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to fetch sensor history:', error);
     }
-  }, [deviceId]);
+  }, [deviceId, settings.demoMode]);
 
   // Set up polling interval
   useEffect(() => {
@@ -325,10 +344,14 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const command = sensorData.pumpStatus ? 'OFF' : 'ON';
-      await controlPump({
-        deviceId,
-        command,
-      });
+
+      // In demo mode, skip API call but still update local state
+      if (!settings.demoMode) {
+        await controlPump({
+          deviceId,
+          command,
+        });
+      }
 
       // Update local state optimistically
       setSensorData(prev => ({
@@ -340,10 +363,14 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to toggle pump:', error);
       // Could show an error alert here
     }
-  }, [deviceId, sensorData.pumpStatus]);
+  }, [deviceId, sensorData.pumpStatus, settings.demoMode]);
 
   const toggleAutoMode = useCallback(() => {
     setSettings(prev => ({ ...prev, autoMode: !prev.autoMode }));
+  }, []);
+
+  const toggleDemoMode = useCallback(() => {
+    setSettings(prev => ({ ...prev, demoMode: !prev.demoMode }));
   }, []);
 
   const markAlertRead = useCallback((id: string) => {
@@ -389,6 +416,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
         unreadAlerts,
         togglePump,
         toggleAutoMode,
+        toggleDemoMode,
         markAlertRead,
         clearAllAlerts,
         addSchedule,

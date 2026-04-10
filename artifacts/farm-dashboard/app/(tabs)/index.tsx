@@ -33,7 +33,7 @@ export default function HomeScreen() {
   const { sensorData, history, refreshData, unreadAlerts } = useFarm();
   const [refreshing, setRefreshing] = useState(false);
 
-  const topPad = Platform.OS === 'web' ? 24 : insets.top;
+  const topPad = Platform.OS === 'web' ? 64 : insets.top;
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
