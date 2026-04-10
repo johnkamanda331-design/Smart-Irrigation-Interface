@@ -1,8 +1,8 @@
 {
   "version": 2,
   "installCommand": "pnpm install",
-  "buildCommand": "cd artifacts/farm-dashboard && pnpm run build:web",
-  "outputDirectory": "artifacts/farm-dashboard/web-build",
+  "buildCommand": "echo 'Build ready'",
+  "outputDirectory": ".",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30

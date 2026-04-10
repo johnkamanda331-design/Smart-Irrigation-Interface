@@ -163,7 +163,6 @@ export default function SensorsScreen() {
         data={flowData}
         icon={<MaterialCommunityIcons name="water-outline" size={20} color={colors.water} />}
       />
-      </View>
     </ScrollView>
   );
 }

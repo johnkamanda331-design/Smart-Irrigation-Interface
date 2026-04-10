@@ -7,6 +7,7 @@ dist
 build
 *.log
 
-# Exclude mobile / sandbox app sources not needed for this deployment
+# Exclude mobile app specific (only API server deploys)
+artifacts/farm-dashboard
 artifacts/mockup-sandbox
 scripts
