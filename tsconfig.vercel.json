@@ -10,24 +10,27 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@workspace/*": ["./lib/*", "./artifacts/*"]
+      "@workspace/db": ["./lib/db/src/index.ts"],
+      "@workspace/api-zod": ["./lib/api-zod/src/index.ts"]
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": false,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "declaration": false,
+    "sourceMap": true,
+    "noEmit": true
   },
-  "include": ["api/**/*", "lib/**/*"],
-  "exclude": ["node_modules", "dist", "artifacts"],
+  "include": ["api/**/*.ts"],
+  "exclude": ["node_modules", "dist", "artifacts", "lib"],
   "references": [
     {
-      "path": "./lib/db"
+      "path": "./lib/db",
+      "prepend": true
     },
     {
-      "path": "./lib/api-zod"
+      "path": "./lib/api-zod",
+      "prepend": true
     }
   ]
 }
